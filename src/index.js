@@ -1,66 +1,67 @@
 const express = require('express')
+const {uuid} = require('uuidv4')
 
 const app = express()
 
 app.use(express.json())
 
-/**
- * Métodos HTTP:
- * 
- * GET: Buscar infos do back-end;
- * POST: Criar uma info no back-end;
- * PUT/PATCH: Alterar uma info no back-end;
- * DELETE: Deletar uma info do back-end;/
- *
- */
 
- /**
-  * Tipos de parametros:
-  * 
-  * Query Params: Principalmente pra filtros e paginação;
-  * Route Params: Identificar recursos na hora de deletar ou atualizar;
-  * Request Body: Conteúdo pra criar ou editar um recurso - JSON;
-  */
+const projects = []
+ 
 
 app.get('/projects', (req, res) => {
   const {title, owner} = req.query;
 
-  // console.table({title, owner})
+  console.log(req.query)
 
-  return res.json([
-    'Projeto 01',
-    'Projeto 02'
-  ])
+  if(!title && !owner){
+    return res.json(projects)
+  }
+
+  const filteredProjects = projects.filter(project => project.owner.includes(owner) || project.title.includes(title))
+
+  return res.json(filteredProjects)
 })
 
 app.post('/projects', (req, res) => {
-  const {title, owner} = req.body;
-  console.table({title, owner})
-  return res.json([
-    'Projeto 01',
-    'Projeto 02',
-    'Projeto 03'
-  ])
+  const project = req.body;
+  
+  const newProject = {id: uuid(), ...project}
+
+  projects.push(newProject)
+
+  return res.json(newProject)
 })
 
 app.put('/projects/:id', (req, res) => {
   const {id} = req.params;
+
   const {title, owner} = req.body;
-  console.table({title, owner})
+
+  const projectIndex = projects.findIndex(project => project.id === id)
+
+  if (projectIndex < 0) {
+    return res.status(404).json({error: 'Project not found'})
+  }
+
+  const project = {id, title, owner}
+
+  projects[projectIndex] = project
  
-  return res.json([
-    'Projeto 01',
-    'Projeto 02',
-    'Projeto 03'
-  ])
+  return res.json(project)
 })
 
 app.delete('/projects/:id', (req, res) => {
-  return res.json([
-    'Projeto 01',
-    'Projeto 02',
-    'Projeto 03'
-  ])
+  const {id} = req.params;
+
+  const projectIndex = projects.findIndex(project => project.id === id)
+
+  if (projectIndex < 0) {
+    return res.status(404).json({error: 'Project not found'})
+  }
+  projects.splice(id, 1)
+
+  return res.status(204).send()
 })
 
 app.listen(3333, () => {
