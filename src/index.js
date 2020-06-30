@@ -1,7 +1,10 @@
 const express = require('express')
 const {uuid, isUuid} = require('uuidv4')
+const cors = require('cors')
 
 const app = express()
+
+app.use(cors())
 
 app.use(express.json())
 
@@ -29,9 +32,9 @@ function validateProjectId (req, res, next) {
 }
 
 app.use(logRequest)
-app.use('/projects/:id', validateProjectId)
+//app.use('/repositories/:id', validateProjectId)
 
-app.get('/projects', (req, res) => {
+app.get('/repositories', (req, res) => {
   const {title, owner} = req.query;
 
   if(!title && !owner){
@@ -43,17 +46,17 @@ app.get('/projects', (req, res) => {
   return res.json(filteredProjects)
 })
 
-app.post('/projects', (req, res) => {
+app.post('/repositories', (req, res) => {
   const project = req.body;
   
-  const newProject = {id: uuid(), ...project}
+  const newProject = {id: uuid(), likes: 0, ...project}
 
   projects.push(newProject)
 
   return res.json(newProject)
 })
 
-app.put('/projects/:id', (req, res) => {
+app.put('/repositories/:id', (req, res) => {
   const {id} = req.params;
 
   const {title, owner} = req.body;
@@ -71,7 +74,7 @@ app.put('/projects/:id', (req, res) => {
   return res.json(project)
 })
 
-app.delete('/projects/:id', (req, res) => {
+app.delete('/repositories/:id', (req, res) => {
   const {id} = req.params;
 
   const projectIndex = projects.findIndex(project => project.id === id)
@@ -79,9 +82,30 @@ app.delete('/projects/:id', (req, res) => {
   if (projectIndex < 0) {
     return res.status(404).json({error: 'Project not found'})
   }
-  projects.splice(id, 1)
+
+  console.log(projects[projectIndex])
+  projects.splice(projectIndex, 1)
+  console.log(projects[projectIndex])
+
+
+
 
   return res.status(204).send()
+})
+
+app.post('/repositories/:id/like', (req, res) => {
+  const {id} = req.params;
+
+  const projectIndex = projects.findIndex(project => project.id === id)
+
+  if (projectIndex < 0) {
+    return res.status(404).json({error: 'Project not found'})
+  }
+
+  projects[projectIndex].likes += 1;
+
+  return res.json(projects[projectIndex])
+
 })
 
 app.listen(3333, () => {
